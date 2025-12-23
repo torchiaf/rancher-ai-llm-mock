@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 COPY . .
@@ -10,5 +10,5 @@ FROM alpine:3.19
 
 WORKDIR /app
 COPY --from=builder /app/llm-mock .
-EXPOSE 8080
+EXPOSE 8083
 ENTRYPOINT ["./llm-mock"]
