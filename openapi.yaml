@@ -1,0 +1,121 @@
+openapi: 3.0.3
+info:
+  title: LLM Mock Service
+  version: 1.0.0
+  description: Mock endpoints for LLM API compatibility (Ollama, Gemini, OpenAI)
+servers:
+  - url: http://localhost:8083
+tags:
+  - name: Control API
+    description: Endpoints for controlling the mock service (push/clear queue)
+  - name: Models API
+    description: Endpoints for model-compatible chat APIs (Ollama, Gemini, OpenAI)
+paths:
+  /v1/control/push:
+    post:
+      summary: Push mock response chunks
+      tags:
+        - Control API
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MockResponse'
+      responses:
+        '204':
+          description: No Content
+  /v1/control/clear:
+    post:
+      summary: Clear mock response queue
+      tags:
+        - Control API
+      responses:
+        '204':
+          description: No Content
+  /api/chat:
+    post:
+      summary: Ollama mock endpoint
+      tags:
+        - Models API
+      responses:
+        '200':
+          description: Streamed chat response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  model:
+                    type: string
+                  created_at:
+                    type: string
+                  message:
+                    type: object
+                  done:
+                    type: boolean
+  /v1beta/models/{path}:
+    post:
+      summary: Gemini mock endpoint
+      tags:
+        - Models API
+      parameters:
+          - in: path
+            name: path
+            required: true
+            description: |
+              Path parameter in the format {model}:{api-name}, e.g. gemini-flash-2.0:streamGenerateContent
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Streamed Gemini response (JSON or SSE)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  candidates:
+                    type: array
+                    items:
+                      type: object
+                  modelVersion:
+                    type: string
+                  responseId:
+                    type: string
+  /chat/completions:
+    post:
+      summary: OpenAI mock completions
+      tags:
+        - Models API
+      responses:
+        '200':
+          description: Streamed OpenAI chat response (SSE)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  object:
+                    type: string
+                  created:
+                    type: integer
+                  model:
+                    type: string
+                  choices:
+                    type: array
+                    items:
+                      type: object
+components:
+  schemas:
+    MockResponse:
+      type: object
+      properties:
+        chunks:
+          type: array
+          items:
+            type: string
+      required:
+        - chunks
