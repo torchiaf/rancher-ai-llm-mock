@@ -18,17 +18,16 @@ func NewQueue() *Queue {
 	}
 }
 
-func (q *Queue) Push(chunks []string) {
+func (q *Queue) Push(response types.MockResponse) {
 	q.mu.Lock()
-	q.messages = append(q.messages, types.MockResponse{Chunks: chunks})
+	q.messages = append(q.messages, response)
 	q.mu.Unlock()
 }
 
 func (q *Queue) Pop() types.MockResponse {
-	q.mu.RLock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 	if len(q.messages) == 0 {
-		q.mu.RUnlock()
-
 		// Send default response with file name (model name)
 		_, file, _, _ := runtime.Caller(1)
 		// Remove directory path, keep only file name and remove .go extension
@@ -42,12 +41,11 @@ func (q *Queue) Pop() types.MockResponse {
 			model,
 			" model."}
 
-		return types.MockResponse{Chunks: chunks}
+		return types.MockResponse{Text: types.Text{Chunks: chunks}}
 	}
 
 	resp := q.messages[0]
 	q.messages = q.messages[1:]
-	q.mu.RUnlock()
 	return resp
 }
 

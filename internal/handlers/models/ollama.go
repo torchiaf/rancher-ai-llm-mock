@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"llm-mock/internal/queue"
+	"llm-mock/internal/types"
 )
 
 type OllamaHandler struct {
@@ -32,21 +33,51 @@ func (s *OllamaHandler) HandleRequest(c *gin.Context) {
 
 	response := s.queue.Pop()
 
-	for i, text := range response.Chunks {
-		resp := map[string]interface{}{
-			"model":      "ollama-mock-v1",
-			"created_at": time.Now().Format(time.RFC3339),
-			"message": map[string]interface{}{
-				"role":    "assistant",
-				"content": text,
-			},
-			"done": i == len(response.Chunks)-1,
-		}
+	if response.Tool.Name != "" {
+		resp := s.buildToolResponse(response.Tool)
 		enc := json.NewEncoder(w)
 		if err := enc.Encode(resp); err != nil {
 			return
 		}
 		flusher.Flush()
-		time.Sleep(200 * time.Millisecond)
+	} else {
+		for i, text := range response.Text.Chunks {
+			resp := s.buildTextResponse(text, i == len(response.Text.Chunks)-1)
+			enc := json.NewEncoder(w)
+			if err := enc.Encode(resp); err != nil {
+				return
+			}
+			flusher.Flush()
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+}
+
+func (s *OllamaHandler) buildTextResponse(chunk string, done bool) map[string]interface{} {
+	return map[string]interface{}{
+		"message": map[string]interface{}{
+			"role":    "assistant",
+			"content": chunk,
+		},
+		"done": done,
+	}
+}
+
+func (s *OllamaHandler) buildToolResponse(tool types.Tool) map[string]interface{} {
+	return map[string]interface{}{
+		"message": map[string]interface{}{
+			"role":    "assistant",
+			"content": "",
+			"tool_calls": []map[string]interface{}{
+				{
+					"function": map[string]interface{}{
+						"name":      tool.Name,
+						"arguments": tool.Args,
+					},
+				},
+			},
+		},
+		"done_reason": "stop",
+		"done":        true,
 	}
 }

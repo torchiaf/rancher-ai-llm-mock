@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"llm-mock/internal/queue"
+	"llm-mock/internal/types"
 )
 
 type OpenAIHandler struct {
@@ -34,38 +35,101 @@ func (s *OpenAIHandler) HandleRequest(c *gin.Context) {
 
 	response := s.queue.Pop()
 
-	for i, chunk := range response.Chunks {
-		data := map[string]interface{}{
-			"id":      "chatcmpl-mock-12345",
-			"object":  "chat.completion.chunk",
-			"created": time.Now().Unix(),
-			"model":   "openai-mock-v1",
-			"choices": []map[string]interface{}{
-				{
-					"index": 0,
-					"delta": map[string]interface{}{
-						"role": func() interface{} {
-							if i == 0 {
-								return "assistant"
-							} else {
-								return nil
-							}
-						}(),
-						"content": chunk,
-					},
-					"finish_reason": nil,
-				},
-			},
-		}
-		b, _ := json.Marshal(data)
+	if response.Tool.Name != "" {
+		b := s.buildToolResponse(response.Tool)
 		w.Write([]byte("data: "))
 		w.Write(b)
 		w.Write([]byte("\n\n"))
 		flusher.Flush()
-		time.Sleep(200 * time.Millisecond)
+	} else {
+		for i, chunk := range response.Text.Chunks {
+			b := s.buildTextResponse(chunk, i)
+			w.Write([]byte("data: "))
+			w.Write(b)
+			w.Write([]byte("\n\n"))
+			flusher.Flush()
+			time.Sleep(100 * time.Millisecond)
+		}
 	}
 
-	// Send the final chunk with finish_reason
+	b := s.buildFinalChunk()
+	w.Write([]byte("data: "))
+	w.Write(b)
+	w.Write([]byte("\n\n"))
+	flusher.Flush()
+
+	// End the stream
+	w.Write([]byte("data: [DONE]\n\n"))
+	flusher.Flush()
+}
+
+func (s *OpenAIHandler) buildTextResponse(chunk string, i int) []byte {
+	data := map[string]interface{}{
+		"id":      "chatcmpl-mock-12345",
+		"object":  "chat.completion.chunk",
+		"created": time.Now().Unix(),
+		"model":   "openai-mock-v1",
+		"choices": []map[string]interface{}{
+			{
+				"index": 0,
+				"delta": map[string]interface{}{
+					"role": func() interface{} {
+						if i == 0 {
+							return "assistant"
+						} else {
+							return nil
+						}
+					}(),
+					"content": chunk,
+				},
+				"finish_reason": "stop",
+			},
+		},
+	}
+	b, _ := json.Marshal(data)
+
+	return b
+}
+
+func (s *OpenAIHandler) buildToolResponse(tool types.Tool) []byte {
+	argsStr := "{}"
+	if tool.Args != nil {
+		if b, err := json.Marshal(tool.Args); err == nil {
+			argsStr = string(b)
+		}
+	}
+
+	data := map[string]interface{}{
+		"id":      "chatcmpl-mock-12345",
+		"object":  "chat.completion.chunk",
+		"created": time.Now().Unix(),
+		"model":   "openai-mock-v1",
+		"choices": []map[string]interface{}{
+			{
+				"index": 0,
+				"delta": map[string]interface{}{
+					"role": "assistant",
+					"tool_calls": []map[string]interface{}{
+						{
+							"id":   "call_abc123",
+							"type": "function",
+							"function": map[string]interface{}{
+								"name":      tool.Name,
+								"arguments": argsStr,
+							},
+						},
+					},
+				},
+				"finish_reason": "tool_calls",
+			},
+		},
+	}
+	b, _ := json.Marshal(data)
+
+	return b
+}
+
+func (s *OpenAIHandler) buildFinalChunk() []byte {
 	data := map[string]interface{}{
 		"id":      "chatcmpl-mock-12345",
 		"object":  "chat.completion.chunk",
@@ -80,12 +144,6 @@ func (s *OpenAIHandler) HandleRequest(c *gin.Context) {
 		},
 	}
 	b, _ := json.Marshal(data)
-	w.Write([]byte("data: "))
-	w.Write(b)
-	w.Write([]byte("\n\n"))
-	flusher.Flush()
 
-	// End the stream
-	w.Write([]byte("data: [DONE]\n\n"))
-	flusher.Flush()
+	return b
 }
