@@ -39,8 +39,8 @@ You can control the mock responses using the `/v1/control` endpoints:
 		},
 		"tool": {
 			"name": "example_tool",
-			"arguments": {
-				"arg1": "value1"
+			"args": {
+				"key": "value"
 			}
 		}
 	}
