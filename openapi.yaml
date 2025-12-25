@@ -17,7 +17,7 @@ paths:
       description: |
         Payload validation rules:
         - At least one of `text` or a valid `tool` must be present.
-        - If `tool.name` and `tool.args` must also be provided.
+        - Valide tool must provide `tool.name` and `tool.args`.
       tags:
         - Control API
       requestBody:
