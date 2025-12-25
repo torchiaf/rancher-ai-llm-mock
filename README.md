@@ -34,10 +34,18 @@ You can control the mock responses using the `/v1/control` endpoints:
 - `POST /v1/control/push`: Push a mock response to the queue. Example body:
 	```json
 	{
-		"chunks": ["Hello", "world!"]
+		"text": {
+			"chunks": ["Hello", "world!"]
+		},
+		"tool": {
+			"name": "example_tool",
+			"arguments": {
+				"arg1": "value1"
+			}
+		}
 	}
 	```
-	The next model API call will stream these chunks as response.
+	The next model API call will stream text chunks as response and use tool for MCP invocation.
 
 - `POST /v1/control/clear`: Clear the mock response queue.
 

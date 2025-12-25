@@ -13,7 +13,11 @@ tags:
 paths:
   /v1/control/push:
     post:
-      summary: Push mock response chunks
+      summary: Push mock response(s) to the queue
+      description: |
+        Payload validation rules:
+        - At least one of `text` or a valid `tool` must be present.
+        - If `tool.name` and `tool.args` must also be provided.
       tags:
         - Control API
       requestBody:
@@ -21,7 +25,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MockResponse'
+              oneOf:
+                - $ref: '#/components/schemas/MockResponse'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/MockResponse'
       responses:
         '204':
           description: No Content
@@ -113,9 +121,19 @@ components:
     MockResponse:
       type: object
       properties:
-        chunks:
-          type: array
-          items:
-            type: string
+        text:
+          type: object
+          properties:
+            chunks:
+              type: array
+              items:
+                type: string
+        tool:
+          type: object
+          properties:
+            name:
+              type: string
+            args:
+              type: object
       required:
-        - chunks
+        - text
