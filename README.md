@@ -35,7 +35,7 @@ You can control the mock responses using the `/v1/control` endpoints:
 	```json
 	{
 		"text": {
-			"chunks": ["Hello", "world!"]
+			"chunks": ["Hello", " world!"]
 		},
 		"tool": {
 			"name": "example_tool",
