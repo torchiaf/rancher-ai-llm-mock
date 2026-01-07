@@ -6,7 +6,7 @@ A mock server for Large Language Model (LLM) APIs, supporting OpenAI, Ollama, Ge
 
 1. Clone this repository:
 	```sh
-	git clone https://github.com/your-org/llm-mock.git
+	git clone rancher-sandbox/rancher-ai-llm-mock.git
 	cd llm-mock
 	```
 
