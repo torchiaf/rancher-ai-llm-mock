@@ -1,14 +1,9 @@
 package response
 
 import (
-	"encoding/json"
 	types "llm-mock/internal/types"
-	"log"
-	"net/http"
 	"runtime"
 	"strings"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
@@ -31,29 +26,7 @@ func getModelNameFromCaller(index int) string {
 	return model
 }
 
-func generateResponse(c *gin.Context) types.MockResponse {
-	// Agent selection handling
-	var req interface{}
-	err := c.ShouldBindJSON(&req)
-
-	if err == nil {
-		reqBytes, _ := json.Marshal(req)
-		reqString := string(reqBytes)
-
-		/**
-		 * If the request contains "AVAILABLE CHILD AGENTS", return a mock response
-		 * with the selected agent "Rancher".
-		 */
-		if strings.Contains(reqString, "AVAILABLE CHILD AGENTS") {
-			return types.MockResponse{Text: types.Text{Chunks: []string{
-				"Rancher",
-			}}}
-		}
-	} else {
-		log.Println("Error:", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
-	}
-
+func generateResponse() types.MockResponse {
 	model := getModelNameFromCaller(3)
 
 	chunks := []string{
@@ -82,12 +55,12 @@ func (h *Handler) Push(req types.MockResponse) {
 	}
 }
 
-func (h *Handler) Pop(c *gin.Context) types.MockResponse {
+func (h *Handler) Pop() types.MockResponse {
 	if len(h.queue.messages) == 0 {
-		return generateResponse(c)
+		return generateResponse()
 	}
 
-	return h.queue.Pop(c)
+	return h.queue.Pop()
 }
 
 func (h *Handler) Clear() {

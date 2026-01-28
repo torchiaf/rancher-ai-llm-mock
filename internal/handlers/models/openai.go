@@ -33,7 +33,7 @@ func (s *OpenAIHandler) HandleRequest(c *gin.Context) {
 		return
 	}
 
-	response := s.response.Pop(c)
+	response := s.response.Pop()
 
 	if response.Tool.Name != "" {
 		b := s.buildToolResponse(response.Tool)

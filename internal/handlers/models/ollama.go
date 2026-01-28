@@ -31,7 +31,7 @@ func (s *OllamaHandler) HandleRequest(c *gin.Context) {
 		return
 	}
 
-	response := s.response.Pop(c)
+	response := s.response.Pop()
 
 	if response.Tool.Name != "" {
 		resp := s.buildToolResponse(response.Tool)

@@ -3,8 +3,6 @@ package response
 import (
 	types "llm-mock/internal/types"
 	"sync"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Queue struct {
@@ -24,7 +22,7 @@ func (q *Queue) Push(response types.MockResponse) {
 	q.mu.Unlock()
 }
 
-func (q *Queue) Pop(c *gin.Context) types.MockResponse {
+func (q *Queue) Pop() types.MockResponse {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
