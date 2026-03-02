@@ -203,6 +203,8 @@ components:
             name:
               type: string
             args:
-              type: object
+              oneOf:
+                - type: object
+                - type: array
       required:
         - text
