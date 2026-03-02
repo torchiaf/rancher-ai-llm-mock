@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+func isArrayArgs(args interface{}) bool {
+	_, ok := args.([]interface{})
+	return ok
+}
+
 type Handler struct {
 	queue *Queue
 }
@@ -48,7 +53,21 @@ func (h *Handler) Push(req types.MockResponse) {
 
 	// If both Text and Tool are provided, push Tool first, then Text so that the Agent simulate mcp call behavior
 	if len(req.Text.Chunks) > 0 && req.Tool.Name != "" {
-		h.queue.Push(types.MockResponse{Tool: req.Tool})
+		// Handle case where Tool.Args is an array of resources for MCP invocation (i.e. create multiple resources confirmation)
+		if isArrayArgs(req.Tool.Args) {
+			argsArray := req.Tool.Args.([]interface{})
+			for _, arg := range argsArray {
+				h.queue.Push(types.MockResponse{
+					Tool: types.Tool{
+						Name: req.Tool.Name,
+						Args: arg, // Single resource, not array
+					},
+				})
+			}
+		} else {
+			h.queue.Push(types.MockResponse{Tool: req.Tool})
+		}
+
 		h.queue.Push(types.MockResponse{Text: req.Text})
 	} else {
 		h.queue.Push(req)
