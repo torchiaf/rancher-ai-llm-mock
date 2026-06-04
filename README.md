@@ -31,18 +31,22 @@ The server will start on http://localhost:8083
 ## Controlling Responses
 You can control the mock responses using the `/v1/control` endpoints:
 
-- `POST /v1/control/push`: Push a mock response to the queue. Example body:
+- `POST /v1/control/push`: Push mock responses to the queue. Example body:
 	```json
 	{
-		"agent": "Rancher",
+		"agentResponses": [
+			{
+				"agent": "rancher",
+				"mcpTool": {
+					"name": "mcp_tool_name",
+					"args": {
+						"key": "value"
+					}
+				}
+			}
+		],
 		"text": {
 			"chunks": ["Hello", " world!"]
-		},
-		"mcpTool": {
-			"name": "mcp_tool_name",
-			"args": {
-				"key": "value"
-			}
 		},
 		"uiTools": [
 			{
@@ -56,8 +60,10 @@ You can control the mock responses using the `/v1/control` endpoints:
 		]
 	}
 	```
-	- The `args` field accepts either a single object or an array of objects (i.e. confirmation request payload for multiple resources).
-	- The `uiTools` field is optional and accepts an array of UI tools calls. Valid tools can be found in rancher-ai-ui repository in `ui-tools.json`.
+	- `agentResponses`: Array of agent responses with optional MCP tool calls
+	- `text`: Optional text response containing message chunks
+	- `uiTools`: Optional array of UI tools to display. Valid tools can be found in rancher-ai-ui repository in `ui-tools.json`
+	- The `args` field in tools accepts either a single object or an array of objects (e.g. confirmation request payload for multiple resources)
 	- The next model API call will stream text chunks as response, use mcpTool for MCP invocation and uiTools for returning the ui tools calls.
 	- The MCP tool must be one of the supported tools of the agent in request.
 	- If there are less than two agents configured in Rancher, the agent must not be provided.

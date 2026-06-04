@@ -18,25 +18,34 @@ func NewControlHandler(response *response.Handler) *ControlHandler {
 }
 
 func (s *ControlHandler) HandlePushRequest(c *gin.Context) {
-	var req types.MockResponse
+	var req types.PushRequestArgs
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Status(400)
 		return
 	}
 
-	if req.MCPTool.Name != "" && req.MCPTool.Args == nil {
-		c.JSON(400, gin.H{"error": "Invalid payload: MCPTool.Args must be provided when MCPTool is set"})
-		return
+	for i := 0; i < len(req.AgentResponses); i++ {
+		var resp = req.AgentResponses[i]
+
+		if len(req.AgentResponses) > 1 && resp.Agent == "" {
+			c.JSON(400, gin.H{"error": "Invalid payload: Agent must be provided for all AgentResponses when there are multiple AgentResponses"})
+			return
+		}
+
+		if resp.MCPTool.Name != "" && resp.MCPTool.Args == nil {
+			c.JSON(400, gin.H{"error": "Invalid payload: MCPTool.Args must be provided when MCPTool is set"})
+			return
+		}
+
+		if resp.MCPTool.Name == "" && resp.MCPTool.Args != nil {
+			c.JSON(400, gin.H{"error": "Invalid payload: MCPTool.Name must be provided when MCPTool is set"})
+			return
+		}
 	}
 
-	if req.MCPTool.Name == "" && req.MCPTool.Args != nil {
-		c.JSON(400, gin.H{"error": "Invalid payload: MCPTool.Name must be provided when MCPTool is set"})
-		return
-	}
-
-	if (req.Text.Chunks == nil || len(req.Text.Chunks) == 0) && (req.MCPTool.Name == "" || req.MCPTool.Args == nil) {
-		c.JSON(400, gin.H{"error": "Invalid payload: one of Text or MCPTool fields must be provided"})
+	if req.Text.Chunks == nil || len(req.Text.Chunks) == 0 {
+		c.JSON(400, gin.H{"error": "Invalid payload: Text.Chunks must be provided"})
 		return
 	}
 

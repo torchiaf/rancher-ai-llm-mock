@@ -40,18 +40,34 @@ func generateResponse() types.MockResponse {
 	return types.MockResponse{Text: types.Text{Chunks: chunks}}
 }
 
-func (h *Handler) Push(req types.MockResponse) {
-	// If Agent is provided, push it first so the we can simulate llm's agent selection behavior
-	if req.Agent != "" {
-		h.queue.Push(types.MockResponse{Text: types.Text{Chunks: []string{req.Agent}}})
+func (h *Handler) Push(req types.PushRequestArgs) {
+	if len(req.AgentResponses) > 0 {
+		for i := 0; i < len(req.AgentResponses); i++ {
+			resp := req.AgentResponses[i]
+
+			// Push the agent first so the we can simulate llm's agent selection behavior
+			if resp.Agent != "" {
+				h.queue.Push(types.MockResponse{MCPTool: types.Tool{
+					Name: resp.Agent,
+					Args: map[string]any{
+						"query": "mock query for agent: " + resp.Agent,
+					},
+				}})
+			}
+
+			// Push MCP tool response before text response to simulate llm's behavior of invoking tool before generating text response based on tool output
+			if resp.MCPTool.Name != "" {
+				h.queue.Push(types.MockResponse{MCPTool: resp.MCPTool})
+			}
+		}
+
+		// Stop subagents loop when the last agent response has agent field. This works in Adaptive mode scenario.
+		if req.AgentResponses[len(req.AgentResponses)-1].Agent != "" {
+			h.queue.Push(types.MockResponse{Text: types.Text{Chunks: []string{""}}})
+		}
 	}
 
-	// Push MCP tool response before text response to simulate llm's behavior of invoking tool before generating text response based on tool output
-	if req.MCPTool.Name != "" {
-		h.queue.Push(types.MockResponse{MCPTool: req.MCPTool})
-	}
-
-	// Push text response
+	// Push the final text response after processing all agent responses to simulate llm's behavior of generating text from subagent responses
 	h.queue.Push(types.MockResponse{Text: req.Text})
 
 	// Push UITools calls after text response to simulate llm's behavior of generating text response before invoking UITools based on text response
