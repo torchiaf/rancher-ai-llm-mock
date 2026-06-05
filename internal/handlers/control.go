@@ -44,11 +44,6 @@ func (s *ControlHandler) HandlePushRequest(c *gin.Context) {
 		}
 	}
 
-	if req.Text.Chunks == nil || len(req.Text.Chunks) == 0 {
-		c.JSON(400, gin.H{"error": "Invalid payload: Text.Chunks must be provided"})
-		return
-	}
-
 	s.response.Push(req)
 
 	c.Status(204)

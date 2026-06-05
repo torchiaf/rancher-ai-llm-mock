@@ -16,7 +16,6 @@ paths:
       summary: Push mock response(s) to the queue
       description: |
         Payload validation rules:
-        - At least one of `text` or a valid `agentResponses` must be present.
         - Each agentResponse must have either `agent` or a valid `mcpTool`.
         - Valid mcpTool must provide `name` and `args`.
       tags:

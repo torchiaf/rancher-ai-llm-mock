@@ -68,7 +68,9 @@ func (h *Handler) Push(req types.PushRequestArgs) {
 	}
 
 	// Push the final text response after processing all agent responses to simulate llm's behavior of generating text from subagent responses
-	h.queue.Push(types.MockResponse{Text: req.Text})
+	if req.Text.Chunks != nil && len(req.Text.Chunks) > 0 {
+		h.queue.Push(types.MockResponse{Text: req.Text})
+	}
 
 	// Push UITools calls after text response to simulate llm's behavior of generating text response before invoking UITools based on text response
 	if len(req.UITools) > 0 {
