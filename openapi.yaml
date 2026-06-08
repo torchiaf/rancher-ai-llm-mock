@@ -16,7 +16,7 @@ paths:
       summary: Push mock response(s) to the queue
       description: |
         Payload validation rules:
-        - At least one of `text` or a valid `mcpTool` must be present.
+        - Each agentResponse must have either `agent` or a valid `mcpTool`.
         - Valid mcpTool must provide `name` and `args`.
       tags:
         - Control API
@@ -25,11 +25,7 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
-                - $ref: '#/components/schemas/MockResponse'
-                - type: array
-                  items:
-                    $ref: '#/components/schemas/MockResponse'
+              $ref: '#/components/schemas/PushRequestArgs'
       responses:
         '204':
           description: No Content
@@ -178,45 +174,58 @@ paths:
                             type: integer
 components:
   schemas:
-    MockResponse:
+    Text:
       type: object
+      description: Text response chunks
+      properties:
+        chunks:
+          type: array
+          items:
+            type: string
+      required:
+        - chunks
+    Tool:
+      type: object
+      description: Tool definition with name and arguments
+      properties:
+        name:
+          type: string
+        args:
+          oneOf:
+            - type: object
+            - type: array
+              items: {}
+      required:
+        - name
+        - args
+    AgentResponse:
+      type: object
+      description: Agent response with agent name and optional MCP tool
       properties:
         agent:
           type: string
-          description:
-            Agent name to be selected by the Agent for adaptive agent requests. If provided, this will be pushed first to simulate agent selection behavior
-        text:
-          type: object
-          description: Text response chunks
-          properties:
-            chunks:
-              type: array
-              items:
-                type: string
+          description: Agent name to be selected by the Agent for adaptive agent requests.
         mcpTool:
-          type: object
-          description: MCP tool response.
-            if provided,
-            - Both `name` and `args` must be present
-            - It must be one of the tools supported by the agent in the request, when an agent is provided.
-          properties:
-            name:
-              type: string
-            args:
-              oneOf:
-                - type: object
-                - type: array
+          allOf:
+            - $ref: '#/components/schemas/Tool'
+            - description: MCP tool response. If provided, both `name` and `args` must be present.
+      required:
+        - agent
+    PushRequestArgs:
+      type: object
+      description: Request payload for pushing mock responses
+      properties:
+        agentResponses:
+          type: array
+          description: Array of agent responses to be pushed to the queue
+          items:
+            $ref: '#/components/schemas/AgentResponse'
+        text:
+          allOf:
+            - $ref: '#/components/schemas/Text'
+            - description: Optional text response to be pushed
         uiTools:
           type: array
           description: Array of UI tools to be displayed in the response.
           items:
-            type: object
-            properties:
-              name:
-                type: string
-              args:
-                oneOf:
-                  - type: object
-                  - type: array
-      required:
-        - text
+            $ref: '#/components/schemas/Tool'
