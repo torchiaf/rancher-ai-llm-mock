@@ -40,7 +40,18 @@ You can control the mock responses using the `/v1/control` endpoints:
 				"mcpTool": {
 					"name": "mcp_tool_name",
 					"args": {
-						"key": "value"
+						"kind":     "Pod",
+						"name":     "my-pod",
+						"manifest": `{
+							apiVersion: 'v1',
+							kind:       'Pod',
+							metadata:   {
+								name:      'my-pod',
+								namespace: 'default'
+							},
+						}`,
+						"cluster":   "local",
+						"namespace": "default"
 					}
 				}
 			}
